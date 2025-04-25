@@ -62,4 +62,3 @@ for link in links:
 
         finally:
             driver.quit()
-            #teste
