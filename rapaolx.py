@@ -39,7 +39,7 @@ for link in links:
 
             print(valor.text)
             
-            for dado in dados:
+            for dado in dados: #limitar a 10 anuncios // fazer o vídeo de comprovação de execução com até 3 anuncios
                 titulo = dado.find('span', class_='olx-text olx-text--overline olx-text--block olx-mb-0-5 olx-color-neutral-120')
                 descricao = dado.find('a')
 
