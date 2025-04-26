@@ -5,60 +5,106 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import time
 
-# Configurações do driver principal (para coletar os links da página inicial)
 
-driver = webdriver.Chrome()
-driver.get("https://www.olx.com.br/autos-e-pecas/carros-vans-e-utilitarios/estado-es?pe=100000&me=10000")
+def capturarAnuncio():
+    # Configurações do driver principal (para coletar os links da página inicial)
+    driver = webdriver.Chrome()
+    driver.get("https://www.olx.com.br/autos-e-pecas/carros-vans-e-utilitarios/estado-es?pe=100000&me=10000")
 
-time.sleep(5)  # Espera para garantir o carregamento da página
-html = driver.page_source
-soup = BeautifulSoup(html, 'html.parser')
+    time.sleep(5)  # Espera para garantir o carregamento da página
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
 
-links = soup.find_all('a', class_='olx-adcard__link')
-driver.quit()  # Fecha o driver principal
+    links = soup.find_all('a', class_='olx-adcard__link')
+    driver.quit()  # Fecha o driver principal
 
-# Processa cada link separadamente com um novo driver
-for link in links:
-    href = link.get('href')
-    print("Anúncio:", link.text.strip(), "-- Link:", href)
-    
-    if href:
-        try:
-            # Criar novo driver por link
-            driver = webdriver.Chrome()
+    # Processa cada link separadamente com um novo driver
+    for i, link in enumerate(links): #limitar a 10 anuncios // fazer o vídeo de comprovação de execução com até 3 anuncios
+        if i >= 1:
+            break
+        
+        href = link.get('href')
+        print("Anúncio:", link.text.strip(), "-- Link:", href)
+        
+        if href:
+            try:
+                # Criar novo driver por link
+                driver = webdriver.Chrome()
 
-            driver.get(href)
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                driver.get(href)
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-            html = driver.page_source
-            soup = BeautifulSoup(html, 'html.parser')
+                html = driver.page_source
+                soup = BeautifulSoup(html, 'html.parser')
 
-            valor = driver.find_element(By.XPATH, '//*[@id="price-box-container"]/div[1]/div[1]/span')
+                anuncio = {
+                    'marca': '',
+                    'modelo': '',
+                    'ano': '',
+                    'cambio': '',
+                    'tipo': '', 
+                    'cor': '',
+                    'valor': '',
+                    'municipio': ''
+                }
 
-            dados = soup.find_all('div', class_='ad__sc-2h9gkk-0 dLQbjb olx-container olx-container--outlined olx-d-flex')
+                valor = driver.find_element(By.XPATH, '//*[@id="price-box-container"]/div[1]/div[1]/span') #captura o valor              
+                municipio = soup.find('span', class_='olx-text olx-text--body-small olx-text--block olx-text--semibold olx-color-neutral-110') # captura o municipio
 
-            print(valor.text)
-            
-            for dado in dados: #limitar a 10 anuncios // fazer o vídeo de comprovação de execução com até 3 anuncios
-                titulo = dado.find('span', class_='olx-text olx-text--overline olx-text--block olx-mb-0-5 olx-color-neutral-120')
-                descricao = dado.find('a')
-
-                if titulo:
-                    print(titulo.text.strip())
-
+                dados = soup.find_all('div', class_='ad__sc-2h9gkk-0 dLQbjb olx-container olx-container--outlined olx-d-flex') #captura as outras info
                 
-                if descricao:
-                    print(descricao.text.strip())
-                else:
-                    descricao = dado.find('span', class_='ad__sc-hj0yqs-0 ekhFnR')
-                    print(descricao.text.strip())
+                if municipio:
+                    municipio_limpo = municipio.text.strip().split(',')[0]
+                    anuncio['municipio'] = municipio_limpo.strip()
 
-            
-            #(i) marca, (ii) modelo, (iii) ano, (iv) cambioAutomatico, (v) se é sedan ou hatch, (vi) cor, (vii) valor e (viii) municipio
+                if valor:
+                    valor_limpo = valor.text.strip().split('$')[1]
+                    anuncio['valor'] = valor_limpo.strip()
 
-        except Exception as e:
-            print("Erro ao acessar:", href)
-            print("Detalhes:", str(e))
+                for dado in dados: #captura as caracteristicas gerais de cada anuncio
 
-        finally:
-            driver.quit()
+                    titulo = dado.find('span', class_='olx-text olx-text--overline olx-text--block olx-mb-0-5 olx-color-neutral-120')
+                    descricao = dado.find('a')
+
+                    if titulo:
+                        titulo_text = titulo.text.strip()
+                    
+                    if descricao:
+                        descricao_text = descricao.text.strip()
+                    else:
+                        descricao = dado.find('span', class_='ad__sc-hj0yqs-0 ekhFnR')
+                        descricao_text = descricao.text.strip()
+                
+                    if titulo_text == "Marca":
+                        anuncio['marca'] = descricao_text
+                    
+                    if titulo_text == "Modelo":
+                        anuncio['modelo'] = descricao_text
+
+                    if titulo_text == "Ano":
+                        anuncio['ano'] = descricao_text
+
+                    if titulo_text == "Câmbio":
+                        anuncio['cambio'] = descricao_text
+
+                    if titulo_text == "Tipo de veículo":
+                        anuncio['tipo'] = descricao_text
+
+                    if titulo_text == "Cor":
+                        anuncio['cor'] = descricao_text                    
+                    
+                print(anuncio.values())
+                #anuncios.append(anuncio)
+
+            except Exception as e:
+                print("Erro ao acessar:", href)
+                print("Detalhes:", str(e))
+                print("Tipo do erro:", type(e))
+
+            finally:
+                driver.quit()
+                #return anuncios
+
+anuncios = capturarAnuncio()
+
+#print(anuncios)
