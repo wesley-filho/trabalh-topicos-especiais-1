@@ -3,7 +3,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium import webdriver
-import time
 
 def capturarAnuncio():
     anuncios = []
@@ -21,7 +20,7 @@ def capturarAnuncio():
 
     # Processa cada link separadamente com um novo driver
     for i, link in enumerate(links): #limitar a 10 anuncios // fazer o vídeo de comprovação de execução com até 3 anuncios
-        if i >= 10:
+        if i >= 3:
             break
         
         href = link.get('href')
